@@ -5,8 +5,8 @@ use syn::ext::IdentExt;
 use syn::parse::Parse;
 use syn::punctuated::Punctuated;
 use syn::{
-    braced, parse_quote, token, Attribute, Field, Generics, Ident, ItemStruct, LitInt, Token, Type,
-    Visibility, ExprBinary, Expr, parse_macro_input
+    braced, parse_macro_input, parse_quote, token, Attribute, Expr, ExprBinary, Field, Generics,
+    Ident, ItemStruct, LitInt, Token, Type, Visibility,
 };
 
 #[allow(dead_code)]
@@ -90,7 +90,6 @@ fn generate_padding_name(count: u64) -> String {
     format!("_pad{}", count)
 }
 
-
 fn generate_padding(
     count: u64,
     offset: usize,
@@ -101,7 +100,10 @@ fn generate_padding(
 
     // Don't know anything about the type sizes here,
     // but we can at least sanity check this
-    assert!(offset > last_offset, "Requested offset is less than current field position");
+    assert!(
+        offset > last_offset,
+        "Requested offset is less than current field position"
+    );
     let offset = ExprBinary {
         attrs: vec![],
         left: Box::new(parse_quote!(#offset)),
@@ -112,13 +114,11 @@ fn generate_padding(
     let pad_size = prev_types
         .iter()
         .map(|ty| parse_quote!(core::mem::size_of::<#ty>()))
-        .fold(offset, |init, sz| {
-            ExprBinary {
-                attrs: vec![],
-                left: Box::new(Expr::Binary(init)),
-                op: syn::BinOp::Sub(parse_quote!(-)),
-                right: Box::new(sz),
-            }
+        .fold(offset, |init, sz| ExprBinary {
+            attrs: vec![],
+            left: Box::new(Expr::Binary(init)),
+            op: syn::BinOp::Sub(parse_quote!(-)),
+            right: Box::new(sz),
         });
 
     let ident = Ident::new(&name, Span::call_site());
@@ -148,12 +148,8 @@ impl PaddedStruct {
                 }
                 PaddedStructField::WithPadding(p) => {
                     let offset = p.offset.base10_parse::<usize>().unwrap();
-                    let padding = generate_padding(
-                        pad_count,
-                        offset,
-                        pad_last_offset,
-                        &pad_field_types,
-                    );
+                    let padding =
+                        generate_padding(pad_count, offset, pad_last_offset, &pad_field_types);
 
                     fields.push(padding);
                     pad_count += 1;

@@ -1,5 +1,5 @@
-use pad_struct::pad_struct;
 use memoffset::offset_of;
+use pad_struct::pad_struct;
 
 #[repr(C)]
 #[derive(Debug)]
@@ -21,11 +21,14 @@ pad_struct!(
 );
 
 fn main() {
-    println!("Padded size: 0x{:x}", core::mem::size_of::<Padded>());
-    println!("SizedStruct size: 0x{:x}", core::mem::size_of::<SizedStruct>());
-    println!("field offset: 0x{:x}", offset_of!(Padded, field));
-    println!("middle offset: 0x{:x}", offset_of!(Padded, middle));
-    println!("another offset: 0x{:x}", offset_of!(Padded, another));
-    println!("something offset: 0x{:x}", offset_of!(Padded, something));
-    println!("canteven offset: 0x{:x}", offset_of!(Padded, canteven));
+    println!("Padded size: \t\t0x{:x}", core::mem::size_of::<Padded>());
+    println!(
+        "SizedStruct size: \t0x{:x}",
+        core::mem::size_of::<SizedStruct>()
+    );
+    println!("field offset: \t\t0x{:x}", offset_of!(Padded, field));
+    println!("middle offset: \t\t0x{:x}", offset_of!(Padded, middle));
+    println!("another offset: \t0x{:x}", offset_of!(Padded, another));
+    println!("something offset: \t0x{:x}", offset_of!(Padded, something));
+    println!("canteven offset: \t0x{:x}", offset_of!(Padded, canteven));
 }
