@@ -87,7 +87,7 @@ struct PaddedStruct {
 }
 
 fn generate_padding_name(count: u64) -> String {
-    format!("_pad{}", count)
+    format!("_pad_struct_padding_array{}", count)
 }
 
 fn generate_padding(
