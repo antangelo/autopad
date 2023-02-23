@@ -1,9 +1,13 @@
 use proc_macro::TokenStream;
+use proc_macro2::Span;
 use quote::ToTokens;
+use syn::ext::IdentExt;
 use syn::parse::Parse;
 use syn::punctuated::Punctuated;
-use syn::ext::IdentExt;
-use syn::{braced, token, Field, Ident, Token, Attribute, Visibility, Type, LitInt, ItemStruct, Generics};
+use syn::{
+    braced, parse_quote, token, Attribute, Field, Generics, Ident, ItemStruct, LitInt, Token, Type,
+    Visibility, ExprBinary, Expr, parse_macro_input
+};
 
 #[allow(dead_code)]
 struct FieldWithPadding {
@@ -82,21 +86,98 @@ struct PaddedStruct {
     semi_token: Option<Token![;]>,
 }
 
+fn generate_padding_name(count: u64) -> String {
+    format!("_pad{}", count)
+}
+
+
+fn generate_padding(
+    count: u64,
+    offset: usize,
+    last_offset: usize,
+    prev_types: &Vec<Type>,
+) -> Field {
+    let name = generate_padding_name(count);
+
+    // Don't know anything about the type sizes here,
+    // but we can at least sanity check this
+    assert!(offset > last_offset, "Requested offset is less than current field position");
+    let offset = ExprBinary {
+        attrs: vec![],
+        left: Box::new(parse_quote!(#offset)),
+        op: syn::BinOp::Sub(parse_quote!(-)),
+        right: Box::new(parse_quote!(#last_offset)),
+    };
+
+    let pad_size = prev_types
+        .iter()
+        .map(|ty| parse_quote!(core::mem::size_of::<#ty>()))
+        .fold(offset, |init, sz| {
+            ExprBinary {
+                attrs: vec![],
+                left: Box::new(Expr::Binary(init)),
+                op: syn::BinOp::Sub(parse_quote!(-)),
+                right: Box::new(sz),
+            }
+        });
+
+    let ident = Ident::new(&name, Span::call_site());
+    let pad_type = parse_quote!([u8; #pad_size]);
+    Field {
+        attrs: vec![],
+        vis: Visibility::Inherited,
+        ident: Some(ident),
+        colon_token: parse_quote!(:),
+        ty: pad_type,
+    }
+}
+
 impl PaddedStruct {
     fn into_struct(self) -> ItemStruct {
         let mut fields = Punctuated::<Field, Token![,]>::new();
 
+        let mut pad_field_types: Vec<Type> = Vec::new();
+        let mut pad_last_offset: usize = 0x0;
+        let mut pad_count = 0;
+
         for field in self.fields {
             match field {
-                PaddedStructField::NoPadding(f) => fields.push(f),
+                PaddedStructField::NoPadding(f) => {
+                    pad_field_types.push(f.ty.clone());
+                    fields.push(f);
+                }
                 PaddedStructField::WithPadding(p) => {
+                    let offset = p.offset.base10_parse::<usize>().unwrap();
+                    let padding = generate_padding(
+                        pad_count,
+                        offset,
+                        pad_last_offset,
+                        &pad_field_types,
+                    );
+
+                    fields.push(padding);
+                    pad_count += 1;
+                    pad_field_types.clear();
+                    pad_field_types.push(p.ty.clone());
+                    pad_last_offset = offset;
                     fields.push(p.into_field());
-                },
+                }
             }
         }
 
-        let fields = syn::FieldsNamed { brace_token: self.brace, named: fields };
-        ItemStruct { attrs: self.attrs, vis: self.vis, struct_token: self.struct_token, ident: self.ident, generics: self.generics, fields: syn::Fields::Named(fields), semi_token: self.semi_token }
+        let fields = syn::FieldsNamed {
+            brace_token: self.brace,
+            named: fields,
+        };
+        ItemStruct {
+            attrs: self.attrs,
+            vis: self.vis,
+            struct_token: self.struct_token,
+            ident: self.ident,
+            generics: self.generics,
+            fields: syn::Fields::Named(fields),
+            semi_token: self.semi_token,
+        }
     }
 }
 
@@ -118,7 +199,8 @@ impl Parse for PaddedStruct {
 
 #[proc_macro]
 pub fn pad_struct(item: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(item as PaddedStruct);
+    let parsed = parse_macro_input!(item as PaddedStruct);
     let padded_struct = parsed.into_struct();
-    TokenStream::from(padded_struct.to_token_stream())
+    let ts = TokenStream::from(padded_struct.to_token_stream());
+    ts
 }
