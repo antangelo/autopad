@@ -13,10 +13,10 @@ pad_struct!(
     #[derive(Debug)]
     struct Padded {
         0x100 => field: u32,
-        /* 0x104 */ middle: u32,
+        /* 0x104 */ between: u32,
         0xc00 => another: SizedStruct,
-        /* 0xc10 */ something: u8,
-        0xfff => canteven: u8,
+        /* 0xc10 */ after_struct: u8,
+        0xfff => end: u8,
     }
 );
 
@@ -27,8 +27,14 @@ fn main() {
         core::mem::size_of::<SizedStruct>()
     );
     println!("field offset: \t\t0x{:x}", offset_of!(Padded, field));
-    println!("middle offset: \t\t0x{:x}", offset_of!(Padded, middle));
+    println!("middle offset: \t\t0x{:x}", offset_of!(Padded, between));
     println!("another offset: \t0x{:x}", offset_of!(Padded, another));
-    println!("something offset: \t0x{:x}", offset_of!(Padded, something));
-    println!("canteven offset: \t0x{:x}", offset_of!(Padded, canteven));
+    println!("something offset: \t0x{:x}", offset_of!(Padded, after_struct));
+    println!("canteven offset: \t0x{:x}", offset_of!(Padded, end));
+
+    assert_eq!(offset_of!(Padded, field), 0x100);
+    assert_eq!(offset_of!(Padded, between), 0x104);
+    assert_eq!(offset_of!(Padded, another), 0xc00);
+    assert_eq!(offset_of!(Padded, end), 0xfff);
+    assert_eq!(core::mem::size_of::<Padded>(), 0xfff + 1);
 }
