@@ -194,7 +194,7 @@ impl Parse for PaddedStruct {
 }
 
 #[proc_macro]
-pub fn pad_struct(item: TokenStream) -> TokenStream {
+pub fn autopad(item: TokenStream) -> TokenStream {
     let parsed = parse_macro_input!(item as PaddedStruct);
     let padded_struct = parsed.into_struct();
     let ts = TokenStream::from(padded_struct.to_token_stream());

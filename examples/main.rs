@@ -1,5 +1,5 @@
 use memoffset::offset_of;
-use pad_struct::pad_struct;
+use autopad::autopad;
 
 #[repr(C)]
 #[derive(Debug)]
@@ -8,7 +8,7 @@ struct SizedStruct {
     f2: u64,
 }
 
-pad_struct!(
+autopad!(
     #[repr(C)]
     #[derive(Debug)]
     struct Padded {

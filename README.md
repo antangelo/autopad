@@ -1,9 +1,9 @@
-# pad_struct
+# autopad
 
-Adds the `pad_struct!` proc macro, allowing for structs to be defined with fields at specified offsets.
+Adds the `autopad!` proc macro, allowing for structs to be defined with fields at specified offsets.
 
 ```Rust
-pad_struct!(
+autopad!(
 
 #[repr(C)] // Needed to preserve field orders
 struct WithPadding {

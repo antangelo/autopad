@@ -1,14 +1,23 @@
 [package]
-name = "pad_struct"
-version = "0.1.0"
+name = "autopad"
+version = "1.0.0"
 edition = "2021"
+license = "MIT OR Apache-2.0"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Define structs with offset fields"
+readme = "README.md"
+repository = "https://github.com/antangelo/autopad"
+
+categories = ["no-std", "no-std::no-alloc", "embedded"]
+keywords = ["offset", "padding"]
+
 [lib]
 proc-macro = true
 
-[dependencies]
+[dev-dependencies]
 memoffset = "0.8.0"
+
+[dependencies]
 proc-macro2 = "1.0.51"
 quote = "1.0.23"
 syn = { version = "1.0.107", features = ["full", "extra-traits"] }
