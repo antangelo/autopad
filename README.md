@@ -32,5 +32,6 @@ The intended use case for this is for structs that represent MMIO devices with s
   - As above, the padding will be printed as well
   - Can workaround with display potentially, but you probably aren't printing sets of MMIO registers to begin with
 - Each invocation of `pad_struct!` will only accept one struct definition
+- Only supports named structs (i.e. `struct Named { x: i32, y: i32 }`, not `struct Unnamed(i32, i32);`)
 
 Some of these are fixable, PRs are welcome.
